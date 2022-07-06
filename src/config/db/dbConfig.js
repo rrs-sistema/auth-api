@@ -15,12 +15,10 @@ const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
   protocol: 'postgres',
   quoteIdentifiers: false,
   dialectOptions: {
-    /*
 	ssl: {
 		require: true,
 		rejectUnauthorized: false
 	  },
-    */  
   },
   define: {
     syncOnAssociation: true,

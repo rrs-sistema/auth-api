@@ -11,13 +11,16 @@ import {
 const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
   host: DB_HOST,
   port: DB_PORT,
-  dialect: "postgres",
+  dialect: 'postgres',
+  protocol: 'postgres',
   quoteIdentifiers: false,
   dialectOptions: {
+    /*
 	ssl: {
 		require: true,
 		rejectUnauthorized: false
-	  },	  
+	  },
+    */  
   },
   define: {
     syncOnAssociation: true,

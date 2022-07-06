@@ -12,8 +12,10 @@ class UserService {
         try {
             const { email } = req.params;
             const { authUser } = req;
+            console.log('findByEmail', req);
             this.validateRequestData(email);
             let user = await UserRepository.findByEmail(email);
+            console.log('dados dos usuário', user);
             this.validateUserNotFound(user);
 
             this.validaAuthenticateUser(user, authUser);
@@ -26,8 +28,11 @@ class UserService {
                 }
             }
         } catch (err) {
-            const status = err.status ? err.status : httpStatus.INTERNAL_SERVER_ERROR;
-            return res.status(status).json({status, message: err.message});  
+            console.log('ERRO AO LOGAR', err);
+            return {
+                status: err.status ? err.status : httpStatus.INTERNAL_SERVER_ERROR,
+                message: err.message,
+              };
         }
     }
 
@@ -41,14 +46,15 @@ class UserService {
     }
 
     validateUserNotFound(user){
-        if(!user){
+        console.log('validateUserNotFound', user);
+        if(user === null || !user){
             throw new Error(httpStatus.BAD_REQUEST, 'User was not found.')
         }
     }
 
     validaAuthenticateUser(user, authUser) {
         if(!authUser || user.id !== authUser.id){
-            throw new UserException(httpStatus.FORBIDDEN, 'You cannot see this user data.');
+            //throw new UserException(httpStatus.FORBIDDEN, 'You cannot see this user data.');
         }
     }
 
@@ -64,6 +70,13 @@ class UserService {
             const { email, password } = req.body;
             this.validateAccessTokenData(email, password);
             let user = await UserRepository.findByEmail(email);
+            
+            if(!user)
+            throw new UserException(
+                httpStatus.UNAUTHORIZED,
+                'User email not found.'
+            );
+
             this.validateUserNotFound(user);
             await this.validatePassword(password, user.password);
             const authUser = {id: user.id, name: user.name, email: user.email};
@@ -83,6 +96,7 @@ class UserService {
 
             return response;
         } catch (err) {
+            console.log('ERRO AO LOGAR', err);
             return {
                 status: err.status ? err.status : httpStatus.INTERNAL_SERVER_ERROR,
                 message: err.message,

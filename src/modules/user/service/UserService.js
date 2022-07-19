@@ -8,6 +8,58 @@ import UserException from '../exception/UserException.js';
 
 class UserService {
 
+    async createUser(req) {
+        try {
+          let userData = req.body;
+          const { transactionid, serviceid } = req.headers;
+          console.info(
+            `Request to POST new USER with data ${JSON.stringify(
+                userData
+            )} | [transactionID: ${transactionid} | serviceID: ${serviceid}]`
+          );
+          this.validateUserData(userData);
+          
+          console.log('Pegando email do usuário', userData.email);
+          let user = await UserRepository.findByEmail(userData.email);
+          this.userAlreadyExists(user);
+
+          await UserRepository.create(userData);
+          let response = {
+            status: httpStatus.SUCCESS,
+            message: 'User created successfully'
+          };          
+          console.info(
+            `Response to POST created user with data ${JSON.stringify(
+              response
+            )} | [transactionID: ${transactionid} | serviceID: ${serviceid}]`
+          );
+          return response;
+        } catch (err) {
+          return {
+            status: err.status ? err.status : httpStatus.INTERNAL_SERVER_ERROR,
+            message: err.message,
+          };
+        }
+      }
+
+      validateUserData(data) {
+        if (!data) {
+            throw new UserException(httpStatus.BAD_REQUEST, "The name, email and password must be informed.");
+        }        
+        if (!data.name) {
+          throw new UserException(httpStatus.BAD_REQUEST, "The name must be informed.");
+        }
+        if (!data.email) {
+            throw new UserException(httpStatus.BAD_REQUEST, "The email must be informed.");
+        }
+        if (!data.password) {
+          throw new UserException(httpStatus.BAD_REQUEST, "The password must be informed.");
+        }       
+        if (!data.admin) {
+          throw new UserException(httpStatus.BAD_REQUEST, "The admin must be informed.");
+        }                    
+      }
+
     async findByEmail(req) {
         try {
             const { email } = req.params;
@@ -24,7 +76,8 @@ class UserService {
                 user: {
                     id: user.id,
                     name: user.name,
-                    email: user.email
+                    email: user.email,
+                    admin: user.admin,
                 }
             }
         } catch (err) {
@@ -35,6 +88,32 @@ class UserService {
               };
         }
     }
+
+    async findAll(req) {
+        try {
+          const { transactionid, serviceid } = req.headers;
+          console.info(
+            `Request to GET all users | [transactionID: ${transactionid} | serviceID: ${serviceid}]`
+          );          
+            let users = await UserRepository.findAll();
+            console.log('Lista dos usuários', users);
+            if (!users) {
+              throw new UserException(httpStatus.BAD_REQUEST, "No users were found.");
+            }
+            let response = {
+              status: httpStatus.SUCCESS,
+              users,
+            };
+            return response;           
+        } catch (err) {
+            console.log('ERRO AO LISTAR OS USUÁRIO', err);
+            return {
+              status: err.status ? err.status : httpStatus.INTERNAL_SERVER_ERROR,
+              message: err.message,
+              };
+        }
+    }
+
 
     validateRequestData(email) {
         if(!email) {
@@ -48,13 +127,19 @@ class UserService {
     validateUserNotFound(user){
         console.log('validateUserNotFound', user);
         if(user === null || !user){
-            throw new Error(httpStatus.BAD_REQUEST, 'User was not found.')
+            throw new UserException(httpStatus.BAD_REQUEST, 'User was not found.')
         }
     }
-
+    
+    userAlreadyExists(user){
+      console.log('userAlreadyExists', user);
+      if(user !== null){
+          throw new UserException(httpStatus.FORBIDDEN, 'User already exists')
+      }
+  }    
     validaAuthenticateUser(user, authUser) {
         if(!authUser || user.id !== authUser.id){
-            //throw new UserException(httpStatus.FORBIDDEN, 'You cannot see this user data.');
+            throw new UserException(httpStatus.FORBIDDEN, 'You cannot see this user data.');
         }
     }
 

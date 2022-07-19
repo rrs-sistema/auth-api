@@ -11,12 +11,14 @@ export async function createInitialData() {
         await User.create({
             name: 'Riva Robert',
             email: 'riva.robert@gmail.com',
-            password: password
+            password: password,
+            admin: true
         });
         await User.create({
             name: 'Kamilly Ketuly',
             email: 'kamilly.ke@gmail.com',
-            password: password
+            password: password,
+            admin: false
         });        
     } catch (err) {
         console.log(err); 

@@ -12,12 +12,14 @@ class UserService {
         try {
           let userData = req.body;
           const { transactionid, serviceid } = req.headers;
+          const { authUser } = req;
           console.info(
             `Request to POST new USER with data ${JSON.stringify(
                 userData
             )} | [transactionID: ${transactionid} | serviceID: ${serviceid}]`
           );
           this.validateUserData(userData);
+          this.checksPermissionToRegisterAnother(authUser);
           
           console.log('Pegando email do usuário', userData.email);
           let user = await UserRepository.findByEmail(userData.email);
@@ -136,11 +138,18 @@ class UserService {
       if(user !== null){
           throw new UserException(httpStatus.FORBIDDEN, 'User already exists')
       }
-  }    
+    } 
+
     validaAuthenticateUser(user, authUser) {
         if(!authUser || user.id !== authUser.id){
             throw new UserException(httpStatus.FORBIDDEN, 'You cannot see this user data.');
         }
+    }
+
+    checksPermissionToRegisterAnother(authUser) {
+      if(authUser.admin === false){
+          throw new UserException(httpStatus.FORBIDDEN, 'You are not allowed to register a new user');
+      }
     }
 
     async getAccessToken(req) {
@@ -164,7 +173,7 @@ class UserService {
 
             this.validateUserNotFound(user);
             await this.validatePassword(password, user.password);
-            const authUser = {id: user.id, name: user.name, email: user.email};
+            const authUser = {id: user.id, name: user.name, email: user.email, admin: user.admin};
             const accessToken = jwt.sign({authUser}, secrets.API_SECRET, { expiresIn: '1d' });
 
             let response =  {
@@ -177,7 +186,6 @@ class UserService {
                   response
                 )} | [transactionID: ${transactionid} | serviceID: ${serviceid}]`
               );
-
 
             return response;
         } catch (err) {

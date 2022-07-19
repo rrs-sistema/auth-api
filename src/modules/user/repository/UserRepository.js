@@ -6,19 +6,8 @@ class UserRepository {
 
     async create(user){
         try {
-            console.info(
-                `Cadastrando usuário dados antes da senha em hash: ${JSON.stringify(
-                    user
-                )}`
-              );            
             let password = await bcrypt.hash(user.password, 10);
             user.password = password;
-            console.info(
-                `Cadastrando usuário depois da senha ser bcrypt: ${JSON.stringify(
-                    user
-                )}`
-              );
-
             await User.create(user);
         } catch (err) {
             console.error(err.message);

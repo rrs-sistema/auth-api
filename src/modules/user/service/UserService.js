@@ -12,16 +12,13 @@ class UserService {
         try {
           let userData = req.body;
           const { transactionid, serviceid } = req.headers;
-          const { authUser } = req;
           console.info(
             `Request to POST new USER with data ${JSON.stringify(
                 userData
             )} | [transactionID: ${transactionid} | serviceID: ${serviceid}]`
           );
           this.validateUserData(userData);
-          this.checksPermissionToRegisterAnother(authUser);
           
-          console.log('Pegando email do usuário', userData.email);
           let user = await UserRepository.findByEmail(userData.email);
           this.userAlreadyExists(user);
 
@@ -66,10 +63,8 @@ class UserService {
         try {
             const { email } = req.params;
             const { authUser } = req;
-            console.log('findByEmail', req);
             this.validateRequestData(email);
             let user = await UserRepository.findByEmail(email);
-            console.log('dados dos usuário', user);
             this.validateUserNotFound(user);
 
             this.validaAuthenticateUser(user, authUser);
@@ -83,7 +78,6 @@ class UserService {
                 }
             }
         } catch (err) {
-            console.log('ERRO AO LOGAR', err);
             return {
                 status: err.status ? err.status : httpStatus.INTERNAL_SERVER_ERROR,
                 message: err.message,
@@ -98,7 +92,6 @@ class UserService {
             `Request to GET all users | [transactionID: ${transactionid} | serviceID: ${serviceid}]`
           );          
             let users = await UserRepository.findAll();
-            console.log('Lista dos usuários', users);
             if (!users) {
               throw new UserException(httpStatus.BAD_REQUEST, "No users were found.");
             }
@@ -108,7 +101,6 @@ class UserService {
             };
             return response;           
         } catch (err) {
-            console.log('ERRO AO LISTAR OS USUÁRIO', err);
             return {
               status: err.status ? err.status : httpStatus.INTERNAL_SERVER_ERROR,
               message: err.message,
@@ -127,14 +119,12 @@ class UserService {
     }
 
     validateUserNotFound(user){
-        console.log('validateUserNotFound', user);
         if(user === null || !user){
             throw new UserException(httpStatus.BAD_REQUEST, 'User was not found.')
         }
     }
     
     userAlreadyExists(user){
-      console.log('userAlreadyExists', user);
       if(user !== null){
           throw new UserException(httpStatus.FORBIDDEN, 'User already exists')
       }
@@ -145,12 +135,13 @@ class UserService {
             throw new UserException(httpStatus.FORBIDDEN, 'You cannot see this user data.');
         }
     }
-
+    /*
     checksPermissionToRegisterAnother(authUser) {
       if(authUser.admin === false){
           throw new UserException(httpStatus.FORBIDDEN, 'You are not allowed to register a new user');
       }
     }
+    */
 
     async getAccessToken(req) {
         try {
@@ -189,7 +180,6 @@ class UserService {
 
             return response;
         } catch (err) {
-            console.log('ERRO AO LOGAR', err);
             return {
                 status: err.status ? err.status : httpStatus.INTERNAL_SERVER_ERROR,
                 message: err.message,
